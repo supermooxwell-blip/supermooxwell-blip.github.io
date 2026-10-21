@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Stock Market Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef0ec; --surface:#ffffff; --surface2:#f6f7f4; --ink:#111613; --muted:#6b756e; --line:#dde2db;
+  --up:#087a45; --up-bg:#e6f4ec; --down:#c62a35; --down-bg:#fdecec; --accent:#0f766e; --amber:#92400e; --amber-bg:#fef3c7;
+  --gold:#b45309; --shadow:0 1px 3px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0d100e; --surface:#161b17; --surface2:#1c221d; --ink:#e9edea; --muted:#9aa79e; --line:#2a332c; --up:#4ade80; --up-bg:#14301f; --down:#f87171; --down-bg:#3a1a1a; --accent:#2dd4bf; --amber-bg:#3a2f12; --shadow:0 1px 3px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif}
+.mono{font-family:"IBM Plex Mono",monospace} button{font:inherit;cursor:pointer}
+a{color:var(--accent)}
+/* STAT BAR */
+.statbar{position:sticky;top:0;z-index:20;background:var(--ink);color:#fff;padding:10px 14px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+@media(prefers-color-scheme:dark){.statbar{background:#000;border-bottom:1px solid var(--line)}}
+.statbar .lab{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.65;font-weight:700}
+.statbar .val{font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:18px;line-height:1}
+.statbar .sub{font-size:11px;opacity:.75;font-family:"IBM Plex Mono",monospace}
+.up{color:var(--up)} .down{color:var(--down)} .statbar .up{color:#4ade80} .statbar .down{color:#fca5a5}
+#nextBtn{margin-left:auto;background:#f59e0b;color:#111;border:0;padding:12px 18px;border-radius:6px;font-weight:800;letter-spacing:.02em}
+#nextBtn:active{transform:scale(.98)} .ghostBtn{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35);padding:11px 12px;border-radius:6px;font-weight:600}
+.wrap{max-width:1280px;margin:0 auto;padding:14px}
+.goalbar{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;gap:14px;align-items:center;box-shadow:var(--shadow)}
+.goalbar p{margin:2px 0 0;font-size:13px;color:var(--muted);line-height:1.45}
+.track{height:8px;background:var(--surface2);border:1px solid var(--line);border-radius:99px;overflow:hidden;min-width:140px;flex:1}
+.fill{height:100%;background:var(--accent);transition:width .5s}
+.grid{display:grid;grid-template-columns:360px 1fr 330px;gap:14px;margin-top:14px;align-items:start}
+@media(max-width:1020px){.grid{grid-template-columns:1fr 1fr} .col-right{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}}
+@media(max-width:640px){.grid{grid-template-columns:1fr} .col-right{display:block} #nextBtn{margin-left:0;width:100%} .statbar{gap:12px}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+.panel h2{font-size:11px;letter-spacing:.13em;text-transform:uppercase;margin:0;padding:12px 14px 8px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.panel h2 span{letter-spacing:0;text-transform:none;font-family:"IBM Plex Mono",monospace;font-size:11px}
+/* market rows */
+.mrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);padding:10px 14px;align-items:center}
+.mrow:hover{background:var(--surface2)} .mrow.sel{background:var(--up-bg)}
+.mrow .sym{font-weight:800;font-family:"IBM Plex Mono",monospace} .mrow .name{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+.mrow .price{font-family:"IBM Plex Mono",monospace;font-weight:700;text-align:right} .pill{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:700;padding:3px 6px;border-radius:99px;text-align:right;justify-self:end}
+.pill.u{background:var(--up-bg);color:var(--up)} .pill.d{background:var(--down-bg);color:var(--down)}
+.spark{grid-column:1/-1}
+/* detail */
+.detail{padding:4px 16px 16px} .bigprice{font-size:38px;font-weight:800;font-family:"IBM Plex Mono",monospace;line-height:1;letter-spacing:-.03em}
+.detail h1{font-size:20px;margin:4px 0 2px} .detail .meta{color:var(--muted);font-size:13px;line-height:1.5}
+.kv{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0}
+.kv div{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:9px} .kv b{display:block;font-family:"IBM Plex Mono",monospace;font-size:14px;margin-top:2px} .kv span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.trade{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch} .trade input{width:92px;padding:11px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font-family:"IBM Plex Mono",monospace;font-weight:700}
+.qbtn{padding:10px 11px;border:1px solid var(--line);background:var(--surface2);border-radius:6px;font-weight:700}
+.buy{flex:1;background:var(--up);color:#fff;border:0;border-radius:6px;font-weight:800;padding:12px} .sell{flex:1;background:var(--ink);color:#fff;border:0;border-radius:6px;font-weight:800;padding:12px}
+@media(prefers-color-scheme:dark){.sell{background:#fff;color:#111}}
+.msg{font-size:13px;min-height:18px;margin-top:8px} .rumor{margin-top:12px;background:var(--amber-bg);border:1px solid #f59e0b55;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5} .rumor b{color:var(--amber)}
+/* lists */
+.hold{display:flex;justify-content:space-between;gap:10px;padding:9px 14px;border-top:1px solid var(--line);font-size:13px} .hold:first-of-type{border-top:0}
+.feed{max-height:430px;overflow:auto} .item{padding:10px 14px;border-top:1px solid var(--line);font-size:13px;line-height:1.5} .item:first-of-type{border-top:0} .item time{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);display:block} .item b.hl-u{color:var(--up)} .item b.hl-d{color:var(--down)}
+.rival{display:flex;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)} .rival:first-of-type{border-top:0}
+.avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;flex-shrink:0;font-size:14px}
+.rival .who{flex:1;min-width:0} .rival .who b{display:block;font-size:14px} .rival .who span{font-size:12px;color:var(--muted)} .rival .nw{font-family:"IBM Plex Mono",monospace;font-weight:700;text-align:right}
+.rank{font-family:"IBM Plex Mono",monospace;font-weight:800;width:22px;text-align:center;color:var(--muted)} .you{background:var(--up-bg)}
+details{padding:0 14px 12px} details p,details li{font-size:13px;color:var(--muted);line-height:1.55} summary{font-weight:700;cursor:pointer;padding:10px 0 2px;font-size:13px}
+/* overlay */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;place-items:center;padding:16px;z-index:50} .overlay.show{display:grid}
+.card{background:var(--surface);color:var(--ink);max-width:520px;width:100%;border-radius:14px;padding:22px;max-height:90vh;overflow:auto}
+.card h2{font-size:24px;margin:4px 0 8px;letter-spacing:-.02em} .card p{color:var(--muted);line-height:1.6;font-size:14px}
+.stand{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0} .stand td,.stand th{padding:8px 6px;border-top:1px solid var(--line);text-align:left} .stand td:last-child{text-align:right;font-family:"IBM Plex Mono",monospace;font-weight:700}
+.primary{width:100%;background:var(--ink);color:#fff;border:0;padding:13px;border-radius:8px;font-weight:800} @media(prefers-color-scheme:dark){.primary{background:#fff;color:#111}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--ink);color:#fff;padding:11px 16px;border-radius:99px;font-size:13px;font-weight:600;z-index:60;display:none;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:92vw;text-align:center}
+</style>
+</head>
+<body>
+<div class="statbar">
+  <div><div class="lab">Trading Day</div><div class="val"><span id="dayVal">1</span> <span style="font-size:12px;opacity:.7">/ 30</span></div></div>
+  <div><div class="lab">Net Worth</div><div class="val" id="nwVal">$10,000</div><div class="sub" id="nwChange">—</div></div>
+  <div><div class="lab">Cash</div><div class="val" id="cashVal" style="font-size:15px;padding-top:3px">$10,000</div></div>
+  <div><div class="lab">Your Rank</div><div class="val" id="rankVal">#4</div></div>
+  <button class="ghostBtn" id="howBtn">How to play</button>
+  <button id="nextBtn">Next Day ▸</button>
+</div>
+
+<div class="wrap">
+  <div class="goalbar">
+    <div style="font-size:22px">🏆</div>
+    <div style="flex:1;min-width:200px"><b>The 30-Day Tycoon Race</b><p>Everyone starts with $10,000. Beat Shark, Luna and Viktor by Day 30. Grow past <b style="color:var(--ink)">$20,000</b> for the Tycoon ending — finish 1st to win outright.</p></div>
+    <div class="track"><div class="fill" id="goalFill" style="width:0%"></div></div>
+    <div class="mono" style="font-weight:700;font-size:13px" id="goalPct">0% to $20k</div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div>
+      <section class="panel"><h2>Market Watch <span>tap a stock</span></h2><div id="market"></div></section>
+      <section class="panel"><h2>Your Portfolio <span id="holdCount"></span></h2><div id="holdings"><div class="item" style="color:var(--muted)">No shares yet. Pick a stock, choose a quantity, and hit BUY.</div></div></section>
+      <section class="panel"><h2>How this works</h2><details id="howDetails"><summary>Read the 30-second guide</summary>
+        <p><b style="color:var(--ink)">1. Buy low, sell high.</b> Prices move every day. The chart and the % pill show the trend.</p>
+        <p><b style="color:var(--ink)">2. Read the News Wire.</b> Headlines move the named stock that same day — and the <b style="color:var(--ink)">Rumor Mill</b> under the chart hints at <i>tomorrow's</i> mover (right about 3 times in 4).</p>
+        <p><b style="color:var(--ink)">3. Watch your rivals.</b> Their messages tell you what they're buying. Copy them, or fade them.</p>
+        <p><b style="color:var(--ink)">4. Don't sit on cash forever.</b> Cash doesn't grow. But don't go all-in on one stock either — one bad headline hurts.</p>
+      </details></section>
+    </div>
+
+    <!-- CENTER -->
+    <div>
+      <section class="panel"><div class="detail">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:start">
+          <div><div class="mono" style="font-weight:700;color:var(--accent)" id="dSym">NOVA</div><h1 id="dName">Nova Semiconductors</h1><div class="meta" id="dDesc"></div></div>
+          <div style="text-align:right"><div class="bigprice" id="dPrice">$0</div><div class="mono" id="dChange" style="font-weight:700"></div></div>
+        </div>
+        <div id="chart" style="margin-top:10px"></div>
+        <div class="kv">
+          <div><span>You own</span><b id="kvOwn">0 shares</b></div>
+          <div><span>Avg. cost</span><b id="kvAvg">—</b></div>
+          <div><span>Profit / loss</span><b id="kvPL">—</b></div>
+        </div>
+        <div class="trade">
+          <input id="qty" type="number" min="1" value="10" inputmode="numeric" aria-label="Quantity">
+          <button class="qbtn" data-q="1">1</button><button class="qbtn" data-q="10">10</button><button class="qbtn" data-q="50">50</button><button class="qbtn" id="maxBtn">MAX</button>
+          <button class="buy" id="buyBtn">BUY</button><button class="sell" id="sellBtn">SELL</button>
+        </div>
+        <div class="msg" id="tradeMsg"></div>
+        <div class="rumor" id="rumorBox"></div>
+      </div></section>
+
+      <section class="panel"><h2>📨 Messages <span>boss · tipster · rivals</span></h2><div class="feed" id="inbox" style="max-height:320px"></div></section>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="col-right">
+      <section class="panel"><h2>Leaderboard <span>live</span></h2><div id="rivals"></div></section>
+      <section class="panel"><h2>📰 News Wire <span>moves prices</span></h2><div class="feed" id="news"></div></section>
+    </div>
+  </div>
+  <p style="text-align:center;color:var(--muted);font-size:12px;line-height:1.6;padding:6px 10px 20px">A game with fictional companies and pretend money. Prices are simulated — real investing is slower, riskier, and doesn't come with a Next Day button.</p>
+</div>
+
+<div class="overlay" id="overlay"><div class="card" id="overlayCard"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+var STOCKS=[
+ {sym:"NOVA",name:"Nova Semiconductors",desc:"Makes the AI chips every tech company is fighting over. Big, exciting, jumpy.",price:142,vol:.055,drift:.004,color:"#0f766e"},
+ {sym:"BRGR",name:"Burger Barn",desc:"Fast-food chain. Boring in the best way — steady sales, steady stock.",price:28,vol:.022,drift:.001,color:"#b45309"},
+ {sym:"ORBT",name:"Orbital Dynamics",desc:"Rockets and satellites. One launch can send it to the moon. Or the ocean.",price:67,vol:.085,drift:.002,color:"#1d4ed8"},
+ {sym:"MEDX",name:"Medix Labs",desc:"Drug research. Quiet for weeks, then a trial result changes everything.",price:89,vol:.06,drift:.002,color:"#be185d"},
+ {sym:"SOLR",name:"SolarPeak Energy",desc:"Solar panels and batteries. Rises and falls with energy headlines.",price:34,vol:.05,drift:.003,color:"#ca8a04"},
+ {sym:"PXL",name:"PixelPlay",desc:"Video games and streaming. Fans love it, critics are brutal, price swings hard.",price:19,vol:.075,drift:.001,color:"#7c3aed"},
+ {sym:"HARB",name:"First Harbor Bank",desc:"An old, solid bank. Slow mover — the tortoise of this market.",price:110,vol:.018,drift:.001,color:"#334155"},
+ {sym:"ZAP",name:"Zap Motors",desc:"Electric cars with a loud CEO. Every post he makes moves this stock.",price:53,vol:.09,drift:.002,color:"#dc2626"}
+];
+var POS=["{n} beats expectations — sales way up","{n} announces a product everyone wants","Analysts upgrade {n}: 'just getting started'","{n} signs a huge new deal","Big investors are piling into {n}","{n} reports record profits"];
+var NEG=["{n} misses expectations — sales disappoint","Trouble at {n}: product recall announced","Analysts downgrade {n}: 'too expensive now'","{n} loses a major customer","Investors are dumping {n} after a rough report","Lawsuit filed against {n}"];
+var RIVALS=[
+ {name:"Marcus 'Shark' Vane",style:"Aggressive · chases rockets",color:"#dc2626",ini:"MV",nw:10000,beta:1.5,skill:.006},
+ {name:"Luna Park",style:"Meme trader · buys the hype",color:"#7c3aed",ini:"LP",nw:10000,beta:1.2,skill:.002},
+ {name:"Viktor Chen",style:"Quant · calm, mathematical",color:"#1d4ed8",ini:"VC",nw:10000,beta:.7,skill:.005},
+];
+var state, selected="NOVA", rumor=null, startedNW=10000;
+function gauss(){var u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function money(n){return "$"+Math.round(n).toLocaleString("en-US")}
+function pct(n){return (n>=0?"+":"")+ (n*100).toFixed(1)+"%"}
+function stock(sym){return STOCKS.find(function(s){return s.sym===sym})}
+function netWorth(){var v=state.cash;STOCKS.forEach(function(s){var h=state.hold[s.sym];if(h)v+=h.shares*s.price});return v}
+function reset(){
+ state={day:1,cash:10000,hold:{},news:[],inbox:[],nwHist:[10000],over:false};
+ STOCKS.forEach(function(s){s.hist=[];var p=s.price*(0.92+Math.random()*0.1);for(var i=0;i<20;i++){p=Math.max(2,p*(1+s.drift+s.vol*gauss()*0.7));s.hist.push(p)}s.price=s.hist[s.hist.length-1];s.prev=s.hist[s.hist.length-2]||s.price});
+ RIVALS.forEach(function(r){r.nw=10000});
+ rumor=makeRumor();
+ pushInbox("Your Boss — Dana","Welcome to the desk, rookie. 30 trading days, $10,000, three rivals who would love to embarrass you. Finish 1st and the corner office chatter starts. Don't finish last.");
+ pushInbox("The Tipster","Psst. I leave rumors under the chart. I'm right about 3 times in 4. What you do with that is your business.");
+ pushNews("Market opens for the 30-day season","All four traders start at $10,000. First move is yours.",0,null);
+ renderAll();
+}
+function makeRumor(){var s=STOCKS[Math.floor(Math.random()*STOCKS.length)];return {sym:s.sym,dir:Math.random()<0.55?1:-1, hits:Math.random()<0.75}}
+function pushNews(title,body,impact,sym){state.news.unshift({day:state.day,title:title,body:body,impact:impact,sym:sym})}
+function pushInbox(from,text){state.inbox.unshift({day:state.day,from:from,text:text})}
+function spark(hist,w,h,color){var min=Math.min.apply(null,hist),max=Math.max.apply(null,hist),rg=(max-min)||1;var pts=hist.map(function(p,i){return (i/(hist.length-1)*w).toFixed(1)+","+(h-2-((p-min)/rg)*(h-4)).toFixed(1)}).join(" ");return '<svg width="100%" height="'+h+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.6"/></svg>'}
+function bigChart(s){var hist=s.hist,w=560,h=150,min=Math.min.apply(null,hist)*0.98,max=Math.max.apply(null,hist)*1.02,rg=max-min;var pts=hist.map(function(p,i){return (i/(hist.length-1)*w).toFixed(1)+","+(h-6-((p-min)/rg)*(h-12)).toFixed(1)}).join(" ");var area=pts+" "+w+","+h+" 0,"+h;var up=s.price>=s.hist[0];var c=up?"var(--up)":"var(--down)";return '<svg width="100%" viewBox="0 0 '+w+' '+h+'" style="display:block" role="img" aria-label="Price chart for '+s.sym+'"><polygon points="'+area+'" fill="'+(up?"rgba(8,122,69,.10)":"rgba(198,42,53,.10)")+'"/><polyline points="'+pts+'" fill="none" stroke="'+c+'" stroke-width="2.2"/></svg><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)" class="mono"><span>'+money(min)+' low</span><span>last '+hist.length+' days</span><span>'+money(max)+' high</span></div>'}
+function renderHeader(){var nw=netWorth(),prev=state.nwHist[state.nwHist.length-2]||nw;document.getElementById("dayVal").textContent=Math.min(state.day,30);document.getElementById("nwVal").textContent=money(nw);var ch=document.getElementById("nwChange");var d=nw-10000;ch.textContent=(d>=0?"▲ ":"▼ ")+money(Math.abs(d)).replace("$","$")+" all-time ("+pct(d/10000)+")";ch.className="sub "+(d>=0?"up":"down");document.getElementById("cashVal").textContent=money(state.cash);
+ var ahead=RIVALS.filter(function(r){return r.nw>=nw}).length;document.getElementById("rankVal").textContent="#"+(ahead+1);
+ var g=Math.max(0,Math.min(100,(nw-10000)/10000*100));document.getElementById("goalFill").style.width=g+"%";document.getElementById("goalPct").textContent=Math.round(g)+"% to $20k";
+}
+function renderMarket(){document.getElementById("market").innerHTML=STOCKS.map(function(s){var ch=(s.price-s.prev)/s.prev;return '<button class="mrow '+(s.sym===selected?"sel":"")+'" data-sym="'+s.sym+'"><span><span class="sym">'+s.sym+'</span> <span style="font-size:11px;color:var(--muted)" class="mono">'+(state.hold[s.sym]?state.hold[s.sym].shares+" sh":"")+'</span><br><span class="name">'+s.name+'</span></span><span><span class="price">'+money(s.price)+'</span><br><span class="pill '+(ch>=0?"u":"d")+'">'+pct(ch)+'</span></span><span class="spark">'+spark(s.hist.slice(-14),300,26,ch>=0?"#087a45":"#c62a35")+'</span></button>'}).join("");
+ document.querySelectorAll(".mrow").forEach(function(b){b.addEventListener("click",function(){selected=b.getAttribute("data-sym");renderAll()})});
+}
+function renderDetail(){var s=stock(selected),h=state.hold[s.sym];document.getElementById("dSym").textContent=s.sym;document.getElementById("dName").textContent=s.name;document.getElementById("dDesc").textContent=s.desc;document.getElementById("dPrice").textContent=money(s.price);var ch=(s.price-s.prev)/s.prev;var dc=document.getElementById("dChange");dc.textContent=pct(ch)+" today";dc.style.color=ch>=0?"var(--up)":"var(--down)";document.getElementById("chart").innerHTML=bigChart(s);
+ document.getElementById("kvOwn").textContent=h?h.shares+" shares":"0 shares";document.getElementById("kvAvg").textContent=h?money(h.avg):"—";var pl=document.getElementById("kvPL");if(h){var v=(s.price-h.avg)*h.shares;pl.textContent=(v>=0?"+":"−")+money(Math.abs(v)).slice(0);pl.textContent=(v>=0?"+":"-")+money(Math.abs(v)).replace("$","$");pl.style.color=v>=0?"var(--up)":"var(--down)"}else{pl.textContent="—";pl.style.color=""}
+ document.getElementById("rumorBox").innerHTML=rumor?'<b>🔎 RUMOR MILL — for tomorrow:</b> Word on the floor is <b>'+rumor.sym+'</b> is about to move <b>'+(rumor.dir>0?"UP ↑":"DOWN ↓")+'</b>. Rumors are right about 3 times in 4. Tomorrow\'s rumor appears after you advance the day.':"";
+}
+function renderHoldings(){var keys=Object.keys(state.hold).filter(function(k){return state.hold[k].shares>0});document.getElementById("holdCount").textContent=keys.length?keys.length+" positions":"";document.getElementById("holdings").innerHTML=keys.length?keys.map(function(k){var s=stock(k),h=state.hold[k],v=h.shares*s.price,pl=(s.price-h.avg)*h.shares;return '<div class="hold"><span><b class="mono">'+k+'</b> · '+h.shares+' sh @ '+money(h.avg)+'</span><span class="mono" style="text-align:right"><b>'+money(v)+'</b><br><span style="color:'+(pl>=0?"var(--up)":"var(--down)")+'">'+(pl>=0?"+":"-")+money(Math.abs(pl)).replace("$","$")+'</span></span></div>'}).join(""):'<div class="item" style="color:var(--muted)">No shares yet. Pick a stock, choose a quantity, and hit BUY.</div>'}
+function renderRivals(){var rows=RIVALS.map(function(r){return {name:r.name,style:r.style,color:r.color,ini:r.ini,nw:r.nw,you:false}}).concat([{name:"You",style:"The rookie",color:"#0f766e",ini:"YOU",nw:netWorth(),you:true}]);rows.sort(function(a,b){return b.nw-a.nw});document.getElementById("rivals").innerHTML=rows.map(function(r,i){return '<div class="rival '+(r.you?"you":"")+'"><span class="rank">'+(i+1)+'</span><span class="avatar" style="background:'+r.color+'">'+r.ini+'</span><span class="who"><b>'+r.name+(r.you?" ⭐":"")+'</b><span>'+r.style+'</span></span><span class="nw">'+money(r.nw)+'<br><span style="font-size:11px;color:'+(r.nw>=10000?"var(--up)":"var(--down)")+'">'+pct((r.nw-10000)/10000)+'</span></span></div>'}).join("")}
+function renderFeeds(){document.getElementById("news").innerHTML=state.news.slice(0,18).map(function(n){return '<div class="item"><time>DAY '+n.day+(n.sym?" · "+n.sym:"")+'</time><b class="'+(n.impact>0.02?"hl-u":n.impact<-0.02?"hl-d":"")+'">'+n.title+'</b><br><span style="color:var(--muted)">'+n.body+'</span></div>'}).join("");
+ document.getElementById("inbox").innerHTML=state.inbox.slice(0,14).map(function(m){return '<div class="item"><time>DAY '+m.day+' · '+m.from.toUpperCase()+'</time>'+m.text+'</div>'}).join("")}
+function renderAll(){renderHeader();renderMarket();renderDetail();renderHoldings();renderRivals();renderFeeds()}
+function toast(t){var el=document.getElementById("toast");el.textContent=t;el.style.display="block";setTimeout(function(){el.style.display="none"},2600)}
+function tradeMsg(t,ok){var el=document.getElementById("tradeMsg");el.textContent=t;el.style.color=ok===false?"var(--down)":"var(--up)"}
+function doTrade(isBuy){var s=stock(selected);var q=parseInt(document.getElementById("qty").value,10);if(!q||q<1){tradeMsg("Enter a quantity of 1 or more.",false);return}
+ if(isBuy){var cost=q*s.price;if(cost>state.cash+0.001){tradeMsg("Not enough cash — that costs "+money(cost)+" and you have "+money(state.cash)+".",false);return}state.cash-=cost;var h=state.hold[s.sym]||{shares:0,avg:0};h.avg=(h.avg*h.shares+s.price*q)/(h.shares+q);h.shares+=q;state.hold[s.sym]=h;tradeMsg("Bought "+q+" × "+s.sym+" @ "+money(s.price)+".")}
+ else{var h2=state.hold[s.sym];if(!h2||h2.shares<q){tradeMsg("You only own "+(h2?h2.shares:0)+" shares of "+s.sym+".",false);return}state.cash+=q*s.price;h2.shares-=q;if(h2.shares===0)delete state.hold[s.sym];tradeMsg("Sold "+q+" × "+s.sym+" @ "+money(s.price)+".")}
+ renderAll()}
+function advance(){
+ if(state.over)return;
+ var marketRet=0;
+ // 1-2 news events
+ var events=[];var nEvents=Math.random()<0.6?1:2;
+ for(var i=0;i<nEvents;i++){var s=STOCKS[Math.floor(Math.random()*STOCKS.length)];var pos=Math.random()<0.52;var mag=0.07+Math.random()*0.24;var imp=pos?mag:-mag;var tpl=(pos?POS:NEG)[Math.floor(Math.random()*(pos?POS:NEG).length)];events.push({s:s,imp:imp,title:tpl.replace("{n}",s.name)})}
+ STOCKS.forEach(function(s){s.prev=s.price;var ev=events.filter(function(e){return e.s===s}).reduce(function(a,e){return a+e.imp},0);var rum=0;if(rumor&&rumor.sym===s.sym)rum=(rumor.hits?rumor.dir:-rumor.dir)*(0.06+Math.random()*0.10);var ret=s.drift+s.vol*gauss()+ev+rum;s.price=Math.max(2,s.price*(1+ret));s.hist.push(s.price);if(s.hist.length>40)s.hist.shift();s.lastRet=ret;marketRet+=ret/STOCKS.length});
+ events.forEach(function(e){pushNews(e.title,(e.imp>0?"Shares jumped ":"Shares slid ")+pct(Math.abs(e.imp)).replace("+","")+" on the news.",e.imp,e.s.sym)});
+ if(!events.length)pushNews("Quiet day on the exchange","No big headlines. Prices drifted on their own.",0,null);
+ // Rivals
+ RIVALS.forEach(function(r){var ret=r.skill+marketRet*r.beta+0.045*gauss();r.nw=Math.max(500,r.nw*(1+ret));r.lastRet=ret});
+ // Rival chatter
+ var sorted=RIVALS.slice().sort(function(a,b){return b.lastRet-a.lastRet});var hot=stock(STOCKS.reduce(function(a,b){return (b.lastRet||0)>(a.lastRet||0)?b:a}).sym);
+ if(Math.random()<0.55){var talk=[["Marcus 'Shark' Vane","Just loaded up on "+hot.sym+". You snooze, you lose, rookie."],["Luna Park","Everyone's sleeping on "+hot.sym+" and I am NOT. 🚀"],["Viktor Chen","My model bought "+hot.sym+" at 9:31am. Emotions are not a strategy."],["Marcus 'Shark' Vane","Sold before the drop. Again. This is getting easy."],["Luna Park","Diamond hands. I do not sell. I do not blink."],["Viktor Chen","Statistically, one of you will panic this week. I have a spreadsheet for it."]];var t=talk[Math.floor(Math.random()*talk.length)];pushInbox(t[0],t[1])}
+ // Story beats
+ if(state.day===4)pushInbox("Your Boss — Dana","Shark's been telling the floor you're 'the intern.' Prove him wrong on the leaderboard, not in the hallway.");
+ if(state.day===9)pushInbox("The Tipster","Heads up: mid-season gets wild. One stock usually explodes around now. Keep some cash ready to pounce.");
+ if(state.day===14){var cs=STOCKS[Math.floor(Math.random()*STOCKS.length)];cs.price=Math.max(2,cs.price*0.72);cs.hist[cs.hist.length-1]=cs.price;pushNews("⚠ FLASH CRASH hits "+cs.name,"A trading glitch knocks "+cs.sym+" down hard in minutes. Bargain — or falling knife?",-0.28,cs.sym);pushInbox("Your Boss — Dana","Everyone's panicking about "+cs.sym+". Panic is expensive. Think before you touch it — either way.")}
+ if(state.day===20)pushInbox("Your Boss — Dana","Ten days left. From here, it's about protecting a lead or hunting one. No hero trades on Day 29, understood?");
+ if(state.day===27)pushInbox("Marcus 'Shark' Vane","Final stretch, rookie. Check the leaderboard. That's the gap you have to close. Good luck. You'll need it.");
+ state.day++;state.nwHist.push(netWorth());rumor=makeRumor();
+ if(state.day>30){endGame();}else{renderAll();var nw=netWorth(),prev=state.nwHist[state.nwHist.length-2];toast("Day "+state.day+" — portfolio "+(nw>=prev?"▲ ":"▼ ")+money(Math.abs(nw-prev))+" today")}
+}
+function endGame(){state.over=true;renderAll();var nw=netWorth();var rows=RIVALS.map(function(r){return{name:r.name,nw:r.nw}}).concat([{name:"You",nw:nw}]);rows.sort(function(a,b){return b.nw-a.nw});var rank=rows.findIndex(function(r){return r.name==="You"})+1;
+ var title,body;if(rank===1&&nw>=20000){title="👑 MARKET TYCOON";body="First place AND past $20,000. Shark is quiet. Viktor is recalculating. Dana is smiling. This is the best ending in the game."}else if(rank===1){title="🏆 You Win the Race!";body="You finished 1st — that's the win. Next run: crack $20,000 too for the Tycoon ending."}else if(rank===2){title="🥈 So Close — 2nd Place";body="You beat two rivals and nearly took it all. One better trade and Shark's trophy was yours."}else if(rank===3){title="🥉 3rd Place";body="Mid-pack. You beat one rival — the rematch is where it gets personal."}else{title="📉 Last Place";body="The rivals take this one. The good news: every great trader has a brutal first season. Run it back."}
+ document.getElementById("overlayCard").innerHTML='<div class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:700">SEASON OVER · 30 DAYS</div><h2>'+title+'</h2><p>'+body+'</p><p>Final net worth: <b style="color:var(--ink)">'+money(nw)+'</b> ('+pct((nw-10000)/10000)+' from $10,000)</p><table class="stand"><tr><th>#</th><th>Trader</th><th style="text-align:right">Net worth</th></tr>'+rows.map(function(r,i){return '<tr'+(r.name==="You"?' style="font-weight:700"':"")+'><td>'+(i+1)+'</td><td>'+r.name+'</td><td>'+money(r.nw)+'</td></tr>'}).join("")+'</table><button class="primary" id="againBtn">↻ Play Again — New Season</button>';
+ document.getElementById("overlay").classList.add("show");document.getElementById("againBtn").addEventListener("click",function(){document.getElementById("overlay").classList.remove("show");reset()});
+}
+document.getElementById("buyBtn").addEventListener("click",function(){doTrade(true)});
+document.getElementById("sellBtn").addEventListener("click",function(){doTrade(false)});
+document.getElementById("nextBtn").addEventListener("click",advance);
+document.getElementById("howBtn").addEventListener("click",function(){var d=document.getElementById("howDetails");d.open=true;d.scrollIntoView({behavior:"smooth",block:"center"})});
+document.querySelectorAll("[data-q]").forEach(function(b){b.addEventListener("click",function(){document.getElementById("qty").value=b.getAttribute("data-q")})});
+document.getElementById("maxBtn").addEventListener("click",function(){var s=stock(selected);document.getElementById("qty").value=Math.max(1,Math.floor(state.cash/s.price))});
+reset();
+</script>
+</body>
+</html>
