@@ -13,15 +13,38 @@
   section { background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
   h2 { margin-top: 0; }
   .placeholder { color: #57606a; }
+  .games { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+  @media (max-width: 560px) { .games { grid-template-columns: 1fr; } }
+  .card { display: block; text-decoration: none; color: inherit; background: #fff; border: 1px solid #d0d7de; border-radius: 12px; padding: 1.5rem; text-align: center; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; }
+  .card:hover { transform: translateY(-4px); border-color: #0969da; box-shadow: 0 8px 24px rgba(140,149,159,0.35); }
+  .card .emoji { font-size: 3rem; line-height: 1; }
+  .card h3 { margin: 0.75rem 0 0.5rem; font-size: 1.25rem; }
+  .card p { margin: 0 0 1rem; color: #57606a; font-size: 0.95rem; }
+  .card .play { display: inline-block; background: #1f883d; color: #fff; font-weight: 600; padding: 0.5rem 1.25rem; border-radius: 999px; }
   footer { text-align: center; color: #57606a; padding: 1.5rem 1rem 2.5rem; font-size: 0.9rem; }
 </style>
 </head>
 <body>
 <header>
   <h1>Mooxwell</h1>
-  <p>Welcome to my website — placeholder edition</p>
+  <p>Welcome to my website</p>
 </header>
 <main>
+  <h2 style="text-align:center;">🎮 My Games</h2>
+  <div class="games">
+    <a class="card" href="stock-market-game.html">
+      <div class="emoji">📈</div>
+      <h3>Stock Market Game</h3>
+      <p>Looks like a boring trading terminal — secretly a 30-day tycoon race against rival AI traders.</p>
+      <span class="play">Play</span>
+    </a>
+    <a class="card" href="lost-laptop-mystery.html">
+      <div class="emoji">🕵️</div>
+      <h3>Lost Laptop Mystery</h3>
+      <p>A detective game disguised as a real laptop. Snoop through emails, photos, and files to solve the case.</p>
+      <span class="play">Play</span>
+    </a>
+  </div>
   <section>
     <h2>About Me</h2>
     <p class="placeholder">This is placeholder text. Something about me will go here soon — school, running, math, and games.</p>
